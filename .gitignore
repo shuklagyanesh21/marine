@@ -1,5 +1,6 @@
-./marine_prokaryote_fna/
-./test_out/
-./tmp_datasets/
+marine_prokaryote_fna/
+test_out/
+tmp_datasets/
 test_marine.zip
-./env_marine/
+env_marine/
+smorf_output/
