@@ -30,6 +30,7 @@ fi
 
 TOTAL=${#GENOMES[@]}
 COUNT=0
+declare -a FAILED=()
 for GENOME in "${GENOMES[@]}"; do
   COUNT=$((COUNT + 1))
   BASENAME=$(basename "$GENOME")
@@ -46,8 +47,24 @@ for GENOME in "${GENOMES[@]}"; do
   fi
 
   echo "[$COUNT/$TOTAL] Running smorf on $BASENAME -> $OUTDIR"
-  smorf single "$GENOME" -o "$OUTDIR"
+  if smorf single "$GENOME" -o "$OUTDIR"; then
+    continue
+  fi
+
+  EXIT_CODE=$?
+  echo "[$COUNT/$TOTAL] ERROR: smorf failed for $BASENAME (exit code $EXIT_CODE)." >&2
+  if [ -d "$OUTDIR" ]; then
+    echo "[$COUNT/$TOTAL] Removing incomplete output directory: $OUTDIR" >&2
+    rm -rf "$OUTDIR"
+  fi
+  FAILED+=("$BASENAME")
 done
 
-echo "Completed smorf runs for $TOTAL genome(s). Outputs stored under '$OUTPUT_ROOT'."
+if [ "${#FAILED[@]}" -eq 0 ]; then
+  echo "Completed smorf runs for $TOTAL genome(s). Outputs stored under '$OUTPUT_ROOT'."
+else
+  echo "Completed smorf runs for $TOTAL genome(s) with ${#FAILED[@]} failure(s). See list below:" >&2
+  printf '  - %s\n' "${FAILED[@]}" >&2
+  echo "Outputs stored under '$OUTPUT_ROOT'. Rerun the script after resolving the errors to resume." >&2
+fi
 
