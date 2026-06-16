@@ -1,0 +1,27 @@
+# Data, results, models, logs - regenerable from code + configs (see AGENTS.md).
+# Track the genome manifest TSV (under data/processed), not the data itself.
+data/
+!data/.gitkeep
+results/
+models/
+logs/
+
+# Keep the committed manifest even though data/ is ignored
+!data/processed/genome_manifest.tsv
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Nextflow
+work/
+.nextflow/
+.nextflow.log*
+
+# OS / editor
+.DS_Store

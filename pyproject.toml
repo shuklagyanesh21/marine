@@ -1,0 +1,37 @@
+[project]
+name = "marine_peptides"
+version = "0.1.0"
+description = "Discovering novel peptides from marine prokaryote genomes and MAGs"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "pyyaml>=6.0",
+    "pandas>=2.0",
+    "numpy>=1.26",
+    "biopython>=1.83",
+]
+
+[project.optional-dependencies]
+# ML stack is intentionally generic until the modeling approach is chosen.
+# Pin concrete libraries (e.g. scikit-learn, torch, transformers/esm) when decided.
+ml = [
+    "scikit-learn>=1.4",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+    "ipykernel>=6.29",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/marine_peptides"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]

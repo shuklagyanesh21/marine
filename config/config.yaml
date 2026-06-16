@@ -1,0 +1,42 @@
+# Central configuration. No hardcoded paths or parameters in code or scripts:
+# read everything from here and use relative paths (see AGENTS.md).
+
+# ---------------------------------------------------------------------------
+# Directory layout (relative to project root)
+# ---------------------------------------------------------------------------
+paths:
+  data_raw: data/raw
+  data_external: data/external
+  data_interim: data/interim
+  data_processed: data/processed
+  results: results
+  models: models
+  logs: logs
+  manifest: data/processed/genome_manifest.tsv  # committed provenance table
+
+# ---------------------------------------------------------------------------
+# Genome QC thresholds (MIMAG-style; tune as needed)
+# ---------------------------------------------------------------------------
+qc:
+  min_completeness: 50.0   # percent (CheckM2)
+  max_contamination: 5.0   # percent (CheckM2)
+
+# ---------------------------------------------------------------------------
+# Dereplication
+# ---------------------------------------------------------------------------
+dereplication:
+  ani_threshold: 95.0      # percent ANI for species-level clustering
+
+# ---------------------------------------------------------------------------
+# ORF / peptide prediction
+# ---------------------------------------------------------------------------
+orf:
+  min_protein_length: 10   # amino acids
+  genetic_code: 11         # bacterial/archaeal translation table
+
+# ---------------------------------------------------------------------------
+# Compute (placeholders; wired into Nextflow process resources later)
+# ---------------------------------------------------------------------------
+resources:
+  max_cpus: 8
+  max_memory_gb: 32

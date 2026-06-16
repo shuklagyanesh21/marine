@@ -1,0 +1,20 @@
+---
+description: Core project conventions for the marine novel-peptide project
+alwaysApply: true
+---
+
+# Project conventions
+
+Always follow the full conventions in [AGENTS.md](AGENTS.md). The three most important:
+
+1. **src vs scripts**: Put reusable, importable, testable logic in `src/marine_peptides/`.
+   `scripts/` and Nextflow `modules/` are THIN wrappers that call into the package. Do NOT
+   pile everything into one giant script.
+2. **raw is read-only**: `data/raw/` is immutable. Write transformations to `data/interim/`
+   or `data/processed/`. Everything except raw must be regenerable from raw + code.
+3. **config-driven**: No hardcoded paths or params. Read them from `config/config.yaml` and
+   use relative paths.
+
+Environments are two-track: conda (`env/environment.yml`) for bioinfo CLIs, `uv` +
+`pyproject.toml` for the Python/ML package. Keep one dated lab-notebook entry per working
+day in `docs/lab-notebook/`.

@@ -1,0 +1,27 @@
+# Conda environment for marine prokaryote bioinfo CLI tools.
+# Create with: mamba env create -f env/environment.yml
+#
+# Versions are pinned for reproducibility; bump deliberately and record the change
+# in the lab notebook. The Python/ML side is managed separately via uv + pyproject.toml.
+name: marine
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  # Genome/MAG acquisition
+  - ncbi-datasets-cli=16.22.1
+  - aria2=1.37.0
+  # QC and taxonomy
+  - checkm2=1.0.2
+  - gtdbtk=2.4.0
+  # ORF / gene prediction
+  - prodigal=2.6.3
+  - pyrodigal=3.5.2
+  # Clustering / search / dereplication
+  - mmseqs2=15.6f452
+  - skani=0.2.2
+  - drep=3.5.0
+  # Misc utilities
+  - seqkit=2.8.2
+  - samtools=1.20
