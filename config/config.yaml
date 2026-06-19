@@ -18,10 +18,10 @@ paths:
 # GTDB release + metadata inputs (read-only; downloaded under data/metadata)
 # ---------------------------------------------------------------------------
 gtdb:
-  release: "r202"
+  release: "r220"
   metadata_dir: data/metadata/gtdb
-  bac120_metadata: data/metadata/gtdb/bac120_metadata_r202.tsv
-  ar122_metadata: data/metadata/gtdb/ar122_metadata_r202.tsv
+  bac120_metadata: data/metadata/gtdb/bac120_metadata_r220.tsv
+  ar122_metadata: data/metadata/gtdb/ar53_metadata_r220.tsv
 
 # ---------------------------------------------------------------------------
 # Marine genome selection (manifest build). No genomes are downloaded here;
