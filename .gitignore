@@ -1,13 +1,15 @@
 # Data, results, models, logs - regenerable from code + configs (see AGENTS.md).
 # Track the genome manifest TSV (under data/processed), not the data itself.
-data/
+# NB: a directory ignored wholesale ("data/") can't have children re-included,
+# so we ignore data/ contents but re-include the path down to the manifest.
+data/*
 !data/.gitkeep
+!data/processed/
+data/processed/*
+!data/processed/genome_manifest.tsv
 results/
 models/
 logs/
-
-# Keep the committed manifest even though data/ is ignored
-!data/processed/genome_manifest.tsv
 
 # Python / uv
 .venv/

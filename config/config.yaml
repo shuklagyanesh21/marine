@@ -15,6 +15,157 @@ paths:
   manifest: data/processed/genome_manifest.tsv  # committed provenance table
 
 # ---------------------------------------------------------------------------
+# GTDB release + metadata inputs (read-only; downloaded under data/metadata)
+# ---------------------------------------------------------------------------
+gtdb:
+  release: "r202"
+  metadata_dir: data/metadata/gtdb
+  bac120_metadata: data/metadata/gtdb/bac120_metadata_r202.tsv
+  ar122_metadata: data/metadata/gtdb/ar122_metadata_r202.tsv
+
+# ---------------------------------------------------------------------------
+# Marine genome selection (manifest build). No genomes are downloaded here;
+# this only decides WHICH accessions to download later.
+#
+#   Tier 1  GTDB metadata keyword match (offline; high precision).
+#   Tier 2  NCBI BioSample ENVO/env_* attributes (recovers marine MAGs/SAGs
+#           whose environment annotation never made it into GTDB metadata).
+# ---------------------------------------------------------------------------
+marine:
+  # Intermediate + final outputs
+  candidates_tier1: data/interim/marine_candidates_tier1.tsv
+  tier2_pool: data/interim/tier2_pool.tsv
+  tier2_query_ids: data/interim/tier2_biosamples.txt
+  biosample_cache: data/interim/biosample_attributes.tsv
+  candidates_tier2: data/interim/marine_candidates_tier2.tsv
+  manifest: data/processed/genome_manifest.tsv
+
+  # --- Keyword matching (case-insensitive, whole-word) -------------------
+  # A genome is marine if an include term matches and no exclude term does.
+  include_keywords:
+    - marine
+    - seawater
+    - "sea water"
+    - "sea-water"
+    - "ocean"
+    - oceanic
+    - "open ocean"
+    - "coastal"
+    - "deep sea"
+    - "deep-sea"
+    - abyssal
+    - hadal
+    - bathypelagic
+    - mesopelagic
+    - epipelagic
+    - pelagic
+    - "water column"
+    - "hydrothermal vent"
+    - "cold seep"
+    - "hydrothermal"
+    - estuary
+    - estuarine
+    - intertidal
+    - "tidal flat"
+    - mangrove
+    - brackish
+    - "salt marsh"
+    - "marine sediment"
+    - "deep-sea sediment"
+    - "deep sea sediment"
+    - "sea ice"
+    - "brine pool"
+    - "continental shelf"
+    - fjord
+    - lagoon
+    - "coral reef"
+    - "reef"
+    # broad-scale ENVO terms seen in BioSample env_broad_scale/env_medium
+    - "marine biome"
+    - "marine water body"
+    - "marine pelagic biome"
+    - "marine benthic biome"
+    - "ocean biome"
+    - "coast"
+
+  # Exclude terms veto a match (avoid freshwater/terrestrial false positives
+  # and e.g. "Marine Drive" street names).
+  exclude_keywords:
+    - freshwater
+    - "fresh water"
+    - lake
+    - river
+    - pond
+    - stream
+    - groundwater
+    - aquifer
+    - "drinking water"
+    - "tap water"
+    - wastewater
+    - "waste water"
+    - sewage
+    - sludge
+    - "activated sludge"
+    - soil
+    - rhizosphere
+    - compost
+    - glacier
+    - "hot spring"
+    - "marine drive"
+    - "marine corps"
+
+  # Genomes whose ONLY marine signal is host association get tagged
+  # (is_host_associated=True) so you can include/exclude them downstream.
+  host_keywords:
+    - sponge
+    - coral
+    - "marine sponge"
+    - "fish"
+    - "gut of"
+    - mollusc
+    - mollusk
+    - oyster
+    - mussel
+    - crustacean
+    - shrimp
+    - copepod
+    - algae
+    - alga
+    - seaweed
+    - kelp
+    - diatom
+    - "marine invertebrate"
+    - whale
+    - dolphin
+    - "sea cucumber"
+    - tunicate
+    - ascidian
+
+  tier1:
+    # GTDB metadata columns scanned for include/exclude/host terms
+    match_fields: [ncbi_isolation_source, ncbi_country, ncbi_organism_name]
+
+  tier2:
+    enabled: true
+    # Only query genomes that are environmental (MAG/SAG/env sample), have a
+    # BioSample, and were NOT already flagged marine by Tier 1.
+    genome_categories:
+      - "derived from metagenome"
+      - "derived from single cell"
+      - "derived from environmental sample"
+    # NCBI E-utilities (raw HTTP; EDirect wrapper not required)
+    eutils_base: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+    batch_size: 200          # biosample IDs per efetch request
+    requests_per_second: 3   # 3 w/o API key, up to 10 with NCBI_API_KEY env var
+    # BioSample harmonized attribute names scanned for marine terms
+    match_fields:
+      - env_broad_scale
+      - env_local_scale
+      - env_medium
+      - isolation_source
+      - geo_loc_name
+
+# ---------------------------------------------------------------------------
 # Genome QC thresholds (MIMAG-style; tune as needed)
 # ---------------------------------------------------------------------------
 qc:
