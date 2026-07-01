@@ -191,3 +191,80 @@ orf:
 resources:
   max_cpus: 8
   max_memory_gb: 32
+
+# ---------------------------------------------------------------------------
+# Tier 3 curated marine catalogs
+# ---------------------------------------------------------------------------
+tier3:
+  enabled: true
+  disk_budget_gb: 320
+  order: [marref, gorg, mardb, oceandna, gomc]
+  tier12_raw_root: data/raw/ncbi_dataset/data
+  out_root: data/raw/tier3
+  interim_root: data/interim/tier3
+  manifest: data/processed/tier3_manifest.tsv
+
+  marref:
+    metadata_tsv: data/metadata/tier3/MarRef/MarRef_1.8.tsv
+    accession_col: "acc:assembly_genbank"
+    out_dir: data/raw/tier3/marref
+    interim_dir: data/interim/tier3/marref
+    inventory_tsv: data/interim/tier3/marref/inventory.tsv
+    accession_list: data/interim/tier3/marref/accessions.txt
+    metadata_snapshot: data/interim/tier3/marref/metadata.tsv
+
+  gorg:
+    ena_project: PRJEB33281
+    filereport_url: "https://www.ebi.ac.uk/ena/portal/api/filereport"
+    metadata_tsv: data/metadata/tier3/GORG-tropics/gorg_wgs_set.tsv
+    out_dir: data/raw/tier3/gorg
+    interim_dir: data/interim/tier3/gorg
+    inventory_tsv: data/interim/tier3/gorg/inventory.tsv
+
+  mardb:
+    metadata_tsv: data/metadata/tier3/MarDB/MarDB_1.7.tsv
+    accession_col: "acc:assembly_genbank"
+    out_dir: data/raw/tier3/mardb
+    interim_dir: data/interim/tier3/mardb
+    inventory_tsv: data/interim/tier3/mardb/inventory.tsv
+    accession_list: data/interim/tier3/mardb/accessions.txt
+    metadata_snapshot: data/interim/tier3/mardb/metadata.tsv
+    missing_accessions: data/interim/tier3/mardb/missing.txt
+
+  oceandna:
+    figshare_collection: 5564844
+    metadata_dir: data/metadata/tier3/OceanDNA
+    out_dir: data/raw/tier3/oceandna
+    interim_dir: data/interim/tier3/oceandna
+    inventory_tsv: data/interim/tier3/oceandna/inventory.tsv
+    files:
+      reps:    {id: 29164842, name: fasta_species-representatives.tar, md5: 807b0f70c096ad740377e9e22c77b315}
+      nonreps: {id: 29200011, name: fasta_non-representatives.tar, md5: c50cd5c886441990ad46bf5cf001c6d0}
+      supp:    {id: 35080240, name: Supplement_revised.tar.gz}
+
+  gomc:
+    cngb_base: "https://ftp.cngb.org/pub/SciRAID/microbiomics/MDB0000002"
+    metadata_dir: data/metadata/tier3/GOMC
+    out_dir: data/raw/tier3/gomc
+    interim_dir: data/interim/tier3/gomc
+    inventory_tsv: data/interim/tier3/gomc/inventory.tsv
+    files:
+      - "24195.GOMC_genomes.tar.gz"
+      - "43191.all_MAGs.tar.gz"
+      - "md5.txt"
+
+# ---------------------------------------------------------------------------
+# Standardized genome layer
+# ---------------------------------------------------------------------------
+standardize:
+  enabled: true
+  out_root: data/interim/genomes
+  fasta_dir: data/interim/genomes/fasta
+  rosetta_tsv: data/interim/genomes/rosetta.tsv
+  index_tsv: data/interim/genomes/index.tsv
+  dedup_report_tsv: data/interim/genomes/dedup_report.tsv
+  processed_index_tsv: data/processed/genome_index.tsv
+  processed_rosetta_tsv: data/processed/genome_rosetta.tsv
+  source_priority: [ncbi, marref, mardb, gomc, gorg, oceandna]
+  compute_md5_seq: true
+  parallel_workers: 8
