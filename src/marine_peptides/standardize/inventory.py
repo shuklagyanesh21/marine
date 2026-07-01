@@ -47,6 +47,13 @@ def _iter_fasta_files(dir_path: Path) -> list[Path]:
     )
 
 
+def _strip_fasta_suffix(name: str) -> str:
+    for suffix in sorted(FASTA_SUFFIXES, key=len, reverse=True):
+        if name.endswith(suffix):
+            return name[: -len(suffix)]
+    return name
+
+
 def _resolve_status(path: Path) -> tuple[str, str, bool]:
     resolved = path.resolve(strict=False)
     if path.exists():
@@ -93,6 +100,14 @@ def scan_tier3_catalogs(cfg: dict[str, Any]) -> dict[str, list[Path]]:
     return results
 
 
+def build_catalog_stem_index(cfg: dict[str, Any]) -> dict[str, dict[str, Path]]:
+    """Map each Tier 3 catalog's FASTA stem to the actual on-disk file."""
+    stem_index: dict[str, dict[str, Path]] = {}
+    for catalog, paths in scan_tier3_catalogs(cfg).items():
+        stem_index[catalog] = {_strip_fasta_suffix(path.name): path for path in paths}
+    return stem_index
+
+
 def load_inventory(cfg: dict[str, Any]) -> tuple[list[InventoryRow], dict[str, Any]]:
     """Build source-instance inventory rows from both manifests plus on-disk scans."""
     paths_cfg = cfg["paths"]
@@ -102,6 +117,7 @@ def load_inventory(cfg: dict[str, Any]) -> tuple[list[InventoryRow], dict[str, A
     ncbi_root = resolve_path(tier3_cfg["tier12_raw_root"])
 
     tier3_scans = scan_tier3_catalogs(cfg)
+    tier3_stem_index = build_catalog_stem_index(cfg)
     ncbi_index = scan_ncbi_dataset(ncbi_root)
 
     inventory: list[InventoryRow] = []
@@ -138,9 +154,18 @@ def load_inventory(cfg: dict[str, Any]) -> tuple[list[InventoryRow], dict[str, A
         source = row.get("catalog", "").strip()
         source_id = row.get("catalog_id", "").strip()
         ncbi_accession = row.get("ncbi_accession", "").strip()
-        raw_path = row.get("local_path", "").strip()
-        path = Path(raw_path) if raw_path else resolve_path("")
-        status, resolved_path, path_exists = _resolve_status(path) if raw_path else ("missing", "", False)
+        manifest_raw_path = row.get("local_path", "").strip()
+        if manifest_raw_path:
+            manifest_path_obj = Path(manifest_raw_path)
+            stem = _strip_fasta_suffix(manifest_path_obj.name)
+            path = tier3_stem_index.get(source, {}).get(stem, manifest_path_obj)
+            raw_path = str(path)
+            status, resolved_path, path_exists = _resolve_status(path)
+            is_symlink = path.is_symlink()
+        else:
+            raw_path = ""
+            status, resolved_path, path_exists = ("missing", "", False)
+            is_symlink = False
         inventory.append(
             InventoryRow(
                 source=source,
@@ -149,7 +174,7 @@ def load_inventory(cfg: dict[str, Any]) -> tuple[list[InventoryRow], dict[str, A
                 raw_path=raw_path,
                 resolved_path=resolved_path,
                 path_exists=path_exists,
-                is_symlink=path.is_symlink() if raw_path else False,
+                is_symlink=is_symlink,
                 status=status,
                 is_gtdb_representative="",
             )

@@ -95,7 +95,7 @@ def compute_metrics_for_paths(
 
     # Keep chunks small because genome sizes vary a lot across catalogs; coarse
     # chunking leads to long straggler tails and makes progress invisible.
-    chunk_size = max(1, min(16, len(unique_paths) // max(1, workers * 64)))
+    chunk_size = max(1, min(16, len(unique_paths) // max(1, workers * 128)))
     with Pool(processes=min(workers, os.cpu_count() or workers)) as pool:
         for index, (path, result) in enumerate(
             pool.imap_unordered(_compute_one, unique_paths, chunksize=chunk_size),

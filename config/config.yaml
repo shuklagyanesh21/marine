@@ -177,6 +177,23 @@ qc:
 # ---------------------------------------------------------------------------
 dereplication:
   ani_threshold: 95.0      # percent ANI for species-level clustering
+  ani_thresholds: [95.0, 99.0]
+  min_alignment_fraction: 0.5
+  contamination_weight: 5.0
+  input_index: data/interim/genomes/index.tsv
+  work_dir: data/interim/dereplication
+  genome_list: data/interim/dereplication/genome_list.txt
+  sketch_dir: data/interim/dereplication/sketches
+  edges_tsv: data/interim/dereplication/skani_edges.tsv
+  checkm2_quality: data/interim/checkm2/quality_report.tsv
+  source_priority: [ncbi, marref, mardb, gomc, gorg, oceandna]
+  skani:
+    screen: 90
+    min_af: 15
+    threads: 20
+  clusters_tsv_pattern: data/processed/derep_clusters_ani{t}.tsv
+  representatives_tsv_pattern: data/processed/genome_representatives_ani{t}.tsv
+  representatives_dir_pattern: data/interim/dereplication/representatives_ani{t}
 
 # ---------------------------------------------------------------------------
 # ORF / peptide prediction
