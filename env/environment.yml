@@ -9,6 +9,7 @@ channels:
   - bioconda
 dependencies:
   - python=3.11
+  - pyyaml=6.0.2
   # Genome/MAG acquisition
   - ncbi-datasets-cli=16.22.1
   - aria2=1.37.0

@@ -205,17 +205,44 @@ orf:
 # SmORFinder annotates small proteins (<50 aa) with a TensorFlow model.
 # Requires the separate smorfinder conda env (env/smorfinder.yml, Python 3.8).
 smorfinder:
-  conda_env: smorfinder
-  # One-time model download after env create: conda activate smorfinder && smorf
+  env_yaml: env/smorfinder.yml
+  conda_prefix: ../envs/smorfinder
+  assets_manifest: env/smorfinder-assets.sha256
+  input_tsv: config/smorfinder_inputs.tsv
+  input_index: data/processed/genome_index.tsv
+  normalized_tsv: data/interim/smorfinder/normalized_inputs.tsv
+  input_status_tsv: data/interim/smorfinder/input_status.tsv
+  pending_tsv: data/interim/smorfinder/pending_inputs.tsv
+  preflight_stamp: data/interim/smorfinder/preflight.ok.json
   out_dir: data/interim/smorfinder
+  processed_manifest: data/processed/smorfinder_run_manifest.tsv
+  cleanup_tmp: true
+  retry_count: 2
+  retry_memory_factor: 1.5
+  max_parallel_tasks: 12
+  single:
+    cpus: 1
+    memory_gb: 3
+    time: "12h"
+  meta:
+    cpus: 8
+    memory_gb: 12
+    time: "24h"
+  cutoffs:
+    dsn1_indiv: 0.9999
+    dsn2_indiv: 0.9999
+    phmm_indiv: 1.0e-6
+    dsn1_overlap: 0.5
+    dsn2_overlap: 0.5
+    phmm_overlap: 1
   # CLI: smorf single <genome.fna>  |  smorf meta <metagenome.fna>
 
 # ---------------------------------------------------------------------------
 # Compute (placeholders; wired into Nextflow process resources later)
 # ---------------------------------------------------------------------------
 resources:
-  max_cpus: 8
-  max_memory_gb: 32
+  max_cpus: 120
+  max_memory_gb: 110
 
 # ---------------------------------------------------------------------------
 # Tier 3 curated marine catalogs

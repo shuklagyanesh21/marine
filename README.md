@@ -26,6 +26,7 @@ download genomes/MAGs -> QC (CheckM2) -> ORF/peptide prediction -> features -> M
 | `config/config.yaml` | Paths, thresholds, and parameters (no hardcoding) |
 | `env/environment.yml` | Conda env for bioinfo CLI tools |
 | `env/smorfinder.yml` | Separate conda env for SmORFinder (Python 3.8) |
+| `env/nextflow-utils.yml` | Minimal conda env for Nextflow Python helper steps |
 | `pyproject.toml` | Python/ML package + dependencies (managed with `uv`) |
 | `data/raw/` | Downloaded genomes/MAGs — READ-ONLY |
 | `data/external/` | Reference DBs (GTDB, Pfam, AMP databases) |
@@ -71,6 +72,9 @@ smorf   # one-time download of model/data files
 Run on a genome: `smorf single myGenome.fna`. Output paths are configured in
 `config/config.yaml` under `smorfinder`.
 
+For the dedicated manifest-driven workflow, see
+[`docs/smorfinder-pipeline.md`](docs/smorfinder-pipeline.md).
+
 ## Running the pipeline
 
 ```bash
@@ -79,6 +83,13 @@ nextflow run main.nf -profile conda
 
 The pipeline is currently a scaffold; stages are stubbed with TODO markers and read their
 parameters from `config/config.yaml`.
+
+SmORFinder runs through its own dedicated workflow:
+
+```bash
+nextflow run smorfinder.nf -profile standard
+nextflow run smorfinder.nf -profile slurm -resume
+```
 
 ## Conventions
 
