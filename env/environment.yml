@@ -18,6 +18,7 @@ dependencies:
   # ORF / gene prediction
   - prodigal=2.6.3
   - pyrodigal=3.5.2
+  # SmORFinder (small proteins) lives in a separate env — see env/smorfinder.yml
   # Clustering / search / dereplication
   - mmseqs2=15.6f452
   - skani=0.2.2

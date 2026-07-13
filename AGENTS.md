@@ -38,11 +38,13 @@ CLI bioinfo tools, engineer features, and apply ML models to discover novel pept
 - No hardcoded paths or parameters. Read them from `config/config.yaml`.
 - Use relative paths everywhere.
 
-## Environments (two-track)
+## Environments (multi-track)
 
 - Bioinfo CLIs (Prodigal/Pyrodigal, CheckM2, GTDB-Tk, MMseqs2, ncbi-datasets-cli, dRep/skani):
-  conda/mamba via `env/environment.yml`.
+  conda/mamba via `env/environment.yml` (Python 3.11).
 - Python/ML package: `uv` + `pyproject.toml` (package `marine_peptides`, Python 3.11).
+- SmORFinder (small-protein annotation): separate conda env via `env/smorfinder.yml`
+  (Python 3.8; PyPI pins `tensorflow==2.3.1` — do not add to `pyproject.toml`).
 - Pin versions. Record any new tool in the appropriate spec.
 
 ## Naming
@@ -65,7 +67,7 @@ CLI bioinfo tools, engineer features, and apply ML models to discover novel pept
 | `modules/` | Nextflow process modules |
 | `notebooks/` | exploratory notebooks |
 | `config/` | config.yaml (paths, thresholds, params) |
-| `env/` | conda environment spec |
+| `env/` | conda environment specs (`environment.yml`, `smorfinder.yml`) |
 | `data/{raw,external,interim,processed}/` | data stages (raw is read-only) |
 | `results/{figures,tables}/` | analysis outputs |
 | `models/` | trained ML artifacts |

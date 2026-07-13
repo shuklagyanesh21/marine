@@ -25,6 +25,7 @@ download genomes/MAGs -> QC (CheckM2) -> ORF/peptide prediction -> features -> M
 | `notebooks/` | Exploratory notebooks (`NN_topic_YYYYMMDD.ipynb`) |
 | `config/config.yaml` | Paths, thresholds, and parameters (no hardcoding) |
 | `env/environment.yml` | Conda env for bioinfo CLI tools |
+| `env/smorfinder.yml` | Separate conda env for SmORFinder (Python 3.8) |
 | `pyproject.toml` | Python/ML package + dependencies (managed with `uv`) |
 | `data/raw/` | Downloaded genomes/MAGs — READ-ONLY |
 | `data/external/` | Reference DBs (GTDB, Pfam, AMP databases) |
@@ -40,7 +41,7 @@ code + configs + a committed genome manifest TSV, not from committing the data i
 
 ## Setup
 
-Two-track environment (see [`AGENTS.md`](AGENTS.md) for the rationale):
+Multi-track environment (see [`AGENTS.md`](AGENTS.md) for the rationale):
 
 ### 1. Bioinfo CLI tools (conda/mamba)
 
@@ -55,6 +56,20 @@ mamba activate marine
 uv venv --python 3.11
 uv pip install -e ".[ml,dev]"
 ```
+
+### 3. SmORFinder (separate conda env)
+
+[SmORFinder](https://github.com/bhattlab/SmORFinder) pins `tensorflow==2.3.1` and
+requires Python 3.8, so it cannot share the `marine` or uv environments.
+
+```bash
+conda env create -f env/smorfinder.yml
+conda activate smorfinder
+smorf   # one-time download of model/data files
+```
+
+Run on a genome: `smorf single myGenome.fna`. Output paths are configured in
+`config/config.yaml` under `smorfinder`.
 
 ## Running the pipeline
 

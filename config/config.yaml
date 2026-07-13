@@ -202,6 +202,14 @@ orf:
   min_protein_length: 10   # amino acids
   genetic_code: 11         # bacterial/archaeal translation table
 
+# SmORFinder annotates small proteins (<50 aa) with a TensorFlow model.
+# Requires the separate smorfinder conda env (env/smorfinder.yml, Python 3.8).
+smorfinder:
+  conda_env: smorfinder
+  # One-time model download after env create: conda activate smorfinder && smorf
+  out_dir: data/interim/smorfinder
+  # CLI: smorf single <genome.fna>  |  smorf meta <metagenome.fna>
+
 # ---------------------------------------------------------------------------
 # Compute (placeholders; wired into Nextflow process resources later)
 # ---------------------------------------------------------------------------

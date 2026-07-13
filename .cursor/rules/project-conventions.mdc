@@ -15,6 +15,7 @@ Always follow the full conventions in [AGENTS.md](AGENTS.md). The three most imp
 3. **config-driven**: No hardcoded paths or params. Read them from `config/config.yaml` and
    use relative paths.
 
-Environments are two-track: conda (`env/environment.yml`) for bioinfo CLIs, `uv` +
-`pyproject.toml` for the Python/ML package. Keep one dated lab-notebook entry per working
-day in `docs/lab-notebook/`.
+Environments are multi-track: conda (`env/environment.yml`) for bioinfo CLIs, `uv` +
+`pyproject.toml` for the Python/ML package, and a separate SmORFinder env
+(`env/smorfinder.yml`, Python 3.8). Keep one dated lab-notebook entry per working day in
+`docs/lab-notebook/`.

@@ -1,0 +1,16 @@
+# SmORFinder — small ORF / small protein annotation (bhattlab/SmORFinder).
+# PyPI package pins tensorflow==2.3.1 and requires Python 3.8; it cannot share the
+# main marine conda env (Python 3.11) or the uv package env (pyproject.toml).
+#
+# Create with: conda env create -f env/smorfinder.yml
+# After first install, download model files: smorf
+name: smorfinder
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+      # TensorFlow 2.3.1 breaks with protobuf >=4/5 at import time.
+      - protobuf==3.20.3
+      - smorfinder==1.0.0
