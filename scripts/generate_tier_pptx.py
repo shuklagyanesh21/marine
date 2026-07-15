@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Generate a comprehensive PowerPoint explaining the tier-wise genome download process."""
+"""Generate a comprehensive PowerPoint explaining the tier-wise genome download
+process and the SmORFinder hybrid run (appended as the final three slides).
+"""
 
 from __future__ import annotations
 
@@ -802,6 +804,126 @@ def create_presentation():
     add_bullet(tf2, "Python/ML: uv sync (reads pyproject.toml)", font_size=14)
     add_bullet(tf2, "Bioinfo CLIs: conda env create -f env/environment.yml", font_size=14)
     add_bullet(tf2, "Both needed for full pipeline", font_size=14)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SLIDE 17: SmORFinder section divider
+    # ═══════════════════════════════════════════════════════════════════════════
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide, NAVY)
+    add_title_box(slide, "SmORFinder — Small ORF / Peptide Prediction",
+                  Inches(1), Inches(2.2), Inches(11), Inches(1.0), font_size=34, color=WHITE)
+    add_title_box(slide, "Hybrid Nextflow run on the full genome collection",
+                  Inches(1), Inches(3.3), Inches(11), Inches(0.7), font_size=20, bold=False, color=LIGHT_BLUE)
+    tf = add_body_box(slide, Inches(1), Inches(4.5), Inches(11), Inches(1.5))
+    add_bullet(tf, "112,414 genomes  →  112,097 completed (99.72%)  →  474,562 predicted smORFs",
+               font_size=18, color=WHITE)
+    add_bullet(tf, "Finished 2026-07-14  ·  docs/smorfinder-pipeline.md", font_size=14, color=MID_GRAY)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SLIDE 18: SmORFinder — how executed
+    # ═══════════════════════════════════════════════════════════════════════════
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide, WHITE)
+    add_title_box(slide, "SmORFinder — How the Run Was Executed",
+                  Inches(0.7), Inches(0.3), Inches(12), Inches(0.7), font_size=28, color=NAVY)
+
+    flow = [
+        ("1. Build inputs\ngenome_index.tsv\n→ smorfinder_inputs.tsv", Inches(0.5), NAVY),
+        ("2. Phase 1: single\nNextflow + SLURM\nsmorf single × 112k", Inches(3.6), OCEAN_BLUE),
+        ("3. Promote failures\n593 genomes → meta\n(script 13)", Inches(6.7), TEAL),
+        ("4. Phase 2: meta\nre-run only failures\nsmorf meta", Inches(9.8), DARK_TEAL),
+    ]
+    for text, left, color in flow:
+        shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(1.2), Inches(2.9), Inches(1.35))
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = color
+        shape.line.fill.background()
+        tf = shape.text_frame
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        for i, line in enumerate(text.split("\n")):
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.text = line
+            p.font.size = Pt(13) if i > 0 else Pt(15)
+            p.font.bold = i == 0
+            p.font.color.rgb = WHITE
+            p.alignment = PP_ALIGN.CENTER
+
+    tf = add_body_box(slide, Inches(0.7), Inches(2.8), Inches(6.0), Inches(4.2))
+    p = tf.paragraphs[0]
+    p.text = "Execution details"
+    p.font.size = Pt(18)
+    p.font.bold = True
+    p.font.color.rgb = OCEAN_BLUE
+    add_bullet(tf, "Workflow: smorfinder.nf  (profile: slurm)", font_size=14)
+    add_bullet(tf, "Env: dedicated conda (Python 3.8 / TF 2.3.1)", font_size=14)
+    add_bullet(tf, "Concurrency: 12 parallel tasks", font_size=14)
+    add_bullet(tf, "Resumable: Nextflow -resume + per-genome _SUCCESS.json", font_size=14)
+    add_bullet(tf, "Failed genomes ignored (not fatal) → promoted to meta", font_size=14)
+    add_bullet(tf, "Why hybrid: single-mode Prodigal segfaults on ~0.5%", font_size=14)
+    add_bullet(tf, "  of genomes; meta recovers most of them", level=1, font_size=13)
+
+    tf2 = add_body_box(slide, Inches(7.0), Inches(2.8), Inches(5.8), Inches(4.2))
+    p = tf2.paragraphs[0]
+    p.text = "Key commands"
+    p.font.size = Pt(18)
+    p.font.bold = True
+    p.font.color.rgb = OCEAN_BLUE
+    add_bullet(tf2, "scripts/12_build_smorfinder_inputs_from_index.py", font_size=13)
+    add_bullet(tf2, "nextflow run smorfinder.nf -profile slurm -resume", font_size=13)
+    add_bullet(tf2, "scripts/13_promote_smorfinder_failures.py", font_size=13)
+    add_bullet(tf2, "nextflow run smorfinder.nf -profile slurm -resume", font_size=13)
+    add_bullet(tf2, "", font_size=6)
+    add_bullet(tf2, "Wall time", font_size=16, bold=True, color=OCEAN_BLUE)
+    add_bullet(tf2, "Phase 1 (single): ~1d 9h", font_size=14)
+    add_bullet(tf2, "Phase 2 (meta): ~12 min", font_size=14)
+    add_bullet(tf2, "Log: logs/smorfinder-hybrid-20260713-133555.log", font_size=12, color=MID_GRAY)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # SLIDE 19: SmORFinder — outputs
+    # ═══════════════════════════════════════════════════════════════════════════
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_slide_bg(slide, WHITE)
+    add_title_box(slide, "SmORFinder — Results & Output Locations",
+                  Inches(0.7), Inches(0.3), Inches(12), Inches(0.7), font_size=28, color=NAVY)
+
+    rows_data = [
+        ["Metric", "Count"],
+        ["Input genomes", "112,414"],
+        ["single-mode successes", "111,821"],
+        ["meta-mode recoveries", "276"],
+        ["Hard failures (mostly GORG SAGs)", "317"],
+        ["Coverage", "112,097 (99.72%)"],
+        ["Predicted smORFs", "474,562"],
+    ]
+    add_table(slide, rows_data, [Inches(4.2), Inches(2.2)], Inches(0.7), Inches(1.15))
+
+    tf = add_body_box(slide, Inches(7.3), Inches(1.15), Inches(5.5), Inches(3.6))
+    p = tf.paragraphs[0]
+    p.text = "Per-genome outputs"
+    p.font.size = Pt(16)
+    p.font.bold = True
+    p.font.color.rgb = OCEAN_BLUE
+    add_bullet(tf, "data/interim/smorfinder/single/<id>/", font_size=13, bold=True)
+    add_bullet(tf, "data/interim/smorfinder/meta/<id>/", font_size=13, bold=True)
+    add_bullet(tf, "Each dir: .faa  .ffn  .gff  .tsv  _SUCCESS.json", font_size=13)
+    add_bullet(tf, "", font_size=6)
+    add_bullet(tf, "Run summary (authoritative)", font_size=16, bold=True, color=OCEAN_BLUE)
+    add_bullet(tf, "data/processed/smorfinder_run_manifest.tsv", font_size=13, bold=True)
+    add_bullet(tf, "", font_size=6)
+    add_bullet(tf, "Hard failures list", font_size=16, bold=True, color=ACCENT_ORANGE)
+    add_bullet(tf, "results/tables/smorfinder_hard_failures.tsv", font_size=13)
+
+    tf2 = add_body_box(slide, Inches(0.7), Inches(5.1), Inches(12), Inches(2.0))
+    p = tf2.paragraphs[0]
+    p.text = "What each file is"
+    p.font.size = Pt(16)
+    p.font.bold = True
+    p.font.color.rgb = OCEAN_BLUE
+    add_bullet(tf2, ".faa / .ffn — predicted small proteins (AA) and coding sequences (nt)", font_size=14)
+    add_bullet(tf2, ".gff / .tsv — coordinates + scores (HMM + deep models); _SUCCESS.json — resume marker", font_size=14)
+    add_bullet(tf2, "Docs: docs/smorfinder-pipeline.md  ·  No re-run needed unless inputs/cutoffs change",
+               font_size=14, color=GREEN)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # Save

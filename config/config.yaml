@@ -219,14 +219,17 @@ smorfinder:
   cleanup_tmp: true
   retry_count: 2
   retry_memory_factor: 1.5
-  max_parallel_tasks: 12
+  max_parallel_tasks: 28
   single:
     cpus: 1
     memory_gb: 3
     time: "12h"
+  # meta is used both for true metagenomes and, in the hybrid strategy, to recover
+  # single-mode Prodigal crashes. Inputs here are mostly small MAGs/SAGs, so a
+  # right-sized allocation keeps concurrency high instead of reserving 8 CPU/12 GB.
   meta:
-    cpus: 8
-    memory_gb: 12
+    cpus: 2
+    memory_gb: 4
     time: "24h"
   cutoffs:
     dsn1_indiv: 0.9999

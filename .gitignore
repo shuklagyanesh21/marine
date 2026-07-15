@@ -19,6 +19,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .ipynb_checkpoints/
+**/__pycache__/
 
 # Nextflow
 work/
@@ -27,3 +28,7 @@ work/
 
 # OS / editor
 .DS_Store
+
+#docs
+docs/*.pptx
+docs/research_papers/

@@ -91,6 +91,22 @@ nextflow run smorfinder.nf -profile standard
 nextflow run smorfinder.nf -profile slurm -resume
 ```
 
+**Status (2026-07-14): full hybrid run finished** — 112,097 / 112,414 genomes
+(99.72%) have valid outputs; 317 hard failures remain (mostly GORG SAGs). Artifacts:
+`data/processed/smorfinder_run_manifest.tsv`,
+`data/interim/smorfinder/{single,meta}/`. Details and how to regenerate the hard-failure
+list: [`docs/smorfinder-pipeline.md`](docs/smorfinder-pipeline.md).
+
+To rebuild the input list and re-run the hybrid strategy (only needed if the genome index or
+SmORFinder cutoffs/assets change):
+
+```bash
+PYTHONPATH=src python3 scripts/12_build_smorfinder_inputs_from_index.py
+nextflow run smorfinder.nf -profile slurm -resume \
+  && PYTHONPATH=src python3 scripts/13_promote_smorfinder_failures.py \
+  && nextflow run smorfinder.nf -profile slurm -resume
+```
+
 ## Conventions
 
 See [`AGENTS.md`](AGENTS.md). In short: reusable logic in `src/`, thin wrappers in

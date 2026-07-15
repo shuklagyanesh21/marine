@@ -89,6 +89,50 @@ nextflow run smorfinder.nf -profile slurm -resume
 
 The `slurm` profile uses `env/nextflow-utils.yml` for the lightweight Python utility steps and runs SmORFinder itself from the dedicated prefix created under `../envs/smorfinder`.
 
+## Hybrid single -> meta strategy (recommended for the full collection)
+
+SmORFinder bundles a modified Prodigal ("DeepSmORFNET") that **segfaults during single-mode
+training** on a subset of genomes (mostly fragmented SAGs). Prodigal's exit code is ignored
+upstream, so the crash surfaces later as `IndexError` in `filter_prodigal_small_genes` and
+`smorf single` exits 1. Meta mode uses a pretrained model (no training phase) and recovers most
+of those failures.
+
+On the full 112,414-genome collection the observed single-mode failure rate was **593 / 112,414
+(0.53%)**, not the ~19% suggested by an early concurrent Prodigal probe (that probe was inflated
+by resource contention under parallel load).
+
+The hybrid strategy calls trained single-mode genes where they work, then recovers the crashers
+in meta mode, in three steps:
+
+```bash
+# Phase 1 - single mode for the whole list (crashers are ignored, not fatal)
+nextflow run smorfinder.nf -profile slurm -resume
+
+# Promote every genome that lacks a valid single/<id>/_SUCCESS.json to meta mode
+PYTHONPATH=src python3 scripts/13_promote_smorfinder_failures.py
+
+# Phase 2 - -resume now re-runs only the promoted (meta) genomes
+nextflow run smorfinder.nf -profile slurm -resume
+```
+
+Chain them into one automatic run with `&&` (each phase must succeed before the next):
+
+```bash
+nextflow run smorfinder.nf -profile slurm -resume \
+  && PYTHONPATH=src python3 scripts/13_promote_smorfinder_failures.py \
+  && nextflow run smorfinder.nf -profile slurm -resume
+```
+
+Notes:
+
+- Only run the promotion step after a **completed** single-mode pass; otherwise genomes that
+  simply have not run yet would be promoted prematurely. The `&&` chain enforces this because an
+  interrupted `nextflow run` exits non-zero.
+- The promotion is idempotent: single successes stay single, rows already in `meta` are untouched.
+- A single genome failure no longer terminates the batch: `SMORFINDER_RUN` retries only transient
+  resource exit codes (137/140/143/247) and otherwise **ignores** the genome. Non-completed
+  genomes appear in the run manifest with a non-`completed` status.
+
 ## Outputs
 
 Per-sample outputs are published to:
@@ -115,6 +159,47 @@ Processed run summary:
 
 - `data/processed/smorfinder_run_manifest.tsv`
 
+Hard failures (regenerable from the run manifest; `results/` is gitignored):
+
+```bash
+mkdir -p results/tables
+awk -F'\t' 'BEGIN{OFS="\t"}
+  NR==1 { print "sample_id","mode","fasta_path","status","reason","output_dir","success_marker"; next }
+  $4=="failed" || $4=="pending" { print $1,$2,$3,$4,$5,$6,$7 }
+' data/processed/smorfinder_run_manifest.tsv > results/tables/smorfinder_hard_failures.tsv
+```
+
+## Full collection run (2026-07-13 → 2026-07-14) — FINISHED
+
+Hybrid SLURM run of all resolvable genomes from `data/processed/genome_index.tsv`.
+**Do not re-run** unless inputs or SmORFinder cutoffs/assets change.
+
+| Metric | Count |
+|--------|------:|
+| Input genomes | 112,414 |
+| Phase 1 kept `single` (valid `_SUCCESS.json`) | 111,821 |
+| Promoted to `meta` after single-mode failure | 593 |
+| Phase 2 `meta` successes | 276 |
+| Hard failures (no success in either mode) | 317 |
+| **Coverage** | **112,097 / 112,414 (99.72%)** |
+
+Phase wall times (Nextflow summaries):
+
+- Phase 1 (`single`): **1d 8h 40m**, ~799 CPU-hours, 593 ignored
+- Phase 2 (`meta`): **12m**, ~13.5 CPU-hours, 317 ignored
+
+Prediction totals on successful genomes: **474,562** smORFs (mean ≈ 4.2 / genome; 12,240 genomes with zero predictions — still valid successes).
+
+Hard-failure composition: **315 GORG** + **2 MarDB**. Almost all residual failures are GORG SAGs that crash even in meta mode. List: `results/tables/smorfinder_hard_failures.tsv` (regenerate with the awk above).
+
+Primary artifacts:
+
+- Per-genome outputs: `data/interim/smorfinder/{single,meta}/<sample_id>/`
+- Run manifest: `data/processed/smorfinder_run_manifest.tsv`
+- Run log: `logs/smorfinder-hybrid-20260713-133555.log`
+
+Note: `data/interim/smorfinder/pending_inputs.tsv` still lists the 593 genomes that were pending at the *start* of phase 2; after phase 2, trust the run manifest / `_SUCCESS.json` counts, not that stale pending file.
+
 ## Resumability
 
 There are two resume layers:
@@ -136,7 +221,7 @@ If the marker is stale or invalid, that sample is re-queued.
 Configured in `config/config.yaml`:
 
 - `single`: `1` CPU, `3 GB`, `12h`
-- `meta`: `8` CPUs, `12 GB`, `24h`
+- `meta`: `2` CPUs, `4 GB`, `24h` (right-sized for MAG/SAG recovery; raise if running true community metagenomes)
 - workflow max parallelism: `12` tasks
 
 The `meta` command passes `--threads <task.cpus>` to SmORFinder. `single` does not have a thread flag upstream, so parallelism comes from running many tasks at once rather than oversizing one task.
@@ -151,6 +236,8 @@ The `meta` command passes `--threads <task.cpus>` to SmORFinder. `single` does n
 - The conda package cache lives under `/home` (see `conda config --show pkgs_dirs`), which can be
   tight. If preflight fails with `NoSpaceLeftError` during the env update, run `conda clean -a`
   and relaunch.
+- The full hybrid collection run completed 2026-07-14 (see table above). Re-running without
+  input/cutoff/asset changes only re-attempts the 317 hard failures.
 
 ## Troubleshooting
 
@@ -158,4 +245,5 @@ The `meta` command passes `--threads <task.cpus>` to SmORFinder. `single` does n
 - SmORFinder upstream parses `--phmm-overlap-cutoff` as an integer-valued option; keep it at `1` unless you intentionally patch the upstream CLI.
 - If the final report or timeline already exists, the workflow config overwrites them automatically.
 - If a sample directory exists without a valid `_SUCCESS.json`, that sample is treated as incomplete and re-run.
+- `smorf single` failing with `IndexError: list index out of range` in `filter_prodigal_small_genes` means the bundled Prodigal segfaulted during single-mode training and left an empty GFF. Recover that genome with meta mode (see the hybrid strategy above); it is not a data problem.
 - Empty prediction sets are valid. The `.faa`, `.ffn`, `.gff`, or `.tsv` files may be empty or header-only and still count as a successful run.

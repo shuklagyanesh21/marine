@@ -308,6 +308,50 @@ def build_inputs_from_genome_index(
     }
 
 
+def promote_failures_to_meta(
+    cfg: dict[str, Any], input_tsv: str | Path | None = None
+) -> dict[str, Any]:
+    """Flip ``single`` rows that lack a valid success marker to ``meta`` mode.
+
+    Intended to run between the two phases of the hybrid strategy: after the
+    single-mode pass, any genome that did not produce a valid
+    ``single/<id>/_SUCCESS.json`` (e.g. because the bundled Prodigal segfaulted
+    during single-mode training) is promoted to ``meta`` mode so a subsequent
+    ``-resume`` re-runs only those genomes with the crash-free meta path.
+
+    The rewrite is idempotent: genomes that already succeeded in single stay
+    single, and rows already in ``meta`` are left untouched.
+    """
+    manifest_path = resolve_path(input_tsv or cfg["smorfinder"]["input_tsv"])
+    rows = load_input_manifest(manifest_path)
+    new_rows: list[dict[str, str]] = []
+    promoted: list[str] = []
+    kept_single = 0
+    already_meta = 0
+    for row in rows:
+        if row.mode != "single":
+            already_meta += 1
+            new_rows.append(row.as_dict())
+            continue
+        if success_marker_is_valid(cfg, row):
+            kept_single += 1
+            new_rows.append(row.as_dict())
+        else:
+            promoted.append(row.sample_id)
+            new_rows.append(
+                {"sample_id": row.sample_id, "mode": "meta", "fasta_path": row.fasta_path}
+            )
+    _write_tsv_atomic(manifest_path, new_rows, INPUT_COLUMNS)
+    return {
+        "output": manifest_path,
+        "total": len(rows),
+        "kept_single": kept_single,
+        "promoted_to_meta": len(promoted),
+        "already_meta": already_meta,
+        "promoted_ids": promoted,
+    }
+
+
 def read_asset_manifest(cfg: dict[str, Any]) -> list[tuple[str, str]]:
     """Read the committed SmORFinder asset checksum manifest."""
     path = resolve_path(cfg["smorfinder"]["assets_manifest"])
@@ -615,7 +659,7 @@ def _write_tsv_atomic(path: Path, rows: list[dict[str, Any]], fieldnames: list[s
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_suffix(path.suffix + ".tmp")
     with temp_path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, delimiter="\t", fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, delimiter="\t", fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in fieldnames})

@@ -194,3 +194,40 @@ def test_build_inputs_from_genome_index_resolves_and_skips(tmp_path: Path, monke
 
     reps = sm.build_inputs_from_genome_index(cfg, representatives_only=True)
     assert reps["written"] == 1
+
+
+def test_promote_failures_to_meta_flips_only_unfinished(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "repo"
+    cfg = _base_cfg(root)
+    _patch_repo(monkeypatch, root, cfg)
+    _write_text(root / "env" / "smorfinder-assets.sha256", "abc  fake\n")
+    _write_text(root / "data" / "iso_ok.fna", ">c\nATGAAATAG\n")
+    _write_text(root / "data" / "iso_fail.fna", ">c\nATGCCCTAG\n")
+    _write_text(
+        root / "config" / "smorfinder_inputs.tsv",
+        "sample_id\tmode\tfasta_path\n"
+        "iso_ok\tsingle\tdata/iso_ok.fna\n"
+        "iso_fail\tsingle\tdata/iso_fail.fna\n",
+    )
+
+    # iso_ok has a valid single-mode success marker; iso_fail has none.
+    out_dir = root / "data" / "interim" / "smorfinder" / "single" / "iso_ok"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for suffix in (".faa", ".ffn", ".gff"):
+        _write_text(out_dir / f"iso_ok{suffix}", "")
+    _write_text(out_dir / "iso_ok.tsv", "seqid\tcontig\tstart\tend\torient\tsmorfam\thmm_smorfam_evalue\tdsn1_prob_smorf\tdsn2_prob_smorf\t5p_seq\torf\t3p_seq\n")
+    sm.write_success_marker(cfg, "iso_ok", "single", "data/iso_ok.fna", out_dir)
+
+    result = sm.promote_failures_to_meta(cfg)
+    assert result["promoted_to_meta"] == 1
+    assert result["kept_single"] == 1
+    assert result["promoted_ids"] == ["iso_fail"]
+
+    modes = {row.sample_id: row.mode for row in sm.load_input_manifest(cfg["smorfinder"]["input_tsv"])}
+    assert modes == {"iso_ok": "single", "iso_fail": "meta"}
+
+    # Idempotent: a second call leaves the already-meta row untouched.
+    again = sm.promote_failures_to_meta(cfg)
+    assert again["promoted_to_meta"] == 0
+    assert again["already_meta"] == 1
+    assert again["kept_single"] == 1
